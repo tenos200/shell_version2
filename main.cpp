@@ -45,12 +45,18 @@ int runShell() {
                     }
                     token = strtok(NULL, " \t|><;&");
                 }
-                //this is fucking shit, needs to be redone
-                if(fork() == 0) {
+
+                /*
+                 * This section still needs to be fixed, we need to make sure that
+                 * args_list is constructed from the all_commands or strtok command?
+                 * Really need to read more into this..
+                 * */
+                pid_t pid = fork();
+                if(pid == 0) {
                     //we start a new child process and then execute command
-                    //construct command
                     string command = allCommands[0];
                     string s = "/bin/" + command;
+                    //ISO not supported in c++11 -> need to somehow replace this
                     char *arg_list[] = {"ls", "-a", NULL};
                     //check if command is valid
                     int statusCode = execvp(s.c_str(), arg_list);
@@ -58,6 +64,8 @@ int runShell() {
                         printf("Process did not terminate correctly\n");
                     }
                 }
+                //now this seems to always exectute before shell restarts, thats good!
+                waitpid(pid, nullptr, 0);
             }
         }
         count++;
