@@ -21,7 +21,7 @@ class SimpleShell {
             userInput[len - 1] = '\0';
         }
 
-        char* token = strtok(userInput, " ");
+        char* token = strtok(userInput, " \t|><;&");
         while(token != nullptr) {
             args.push_back(token);
             token = strtok(nullptr, " ");
