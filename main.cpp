@@ -12,10 +12,10 @@ const int BUFFERLEN = 512;
 class SimpleShell {
 
     vector<char*> processInput(char userInput[512]) {
-        //here we should write a function that gets the input, checks it
+        // Here we should write a function that gets the input, checks it
         vector<char*> args;
 
-        //replace \n with \0 from the fgets, this allows us to use execvp later
+        // Replace \n with \0 from the fgets, this allows us to use execvp later
         size_t len = strlen(userInput);
         if(userInput[len - 1] == '\n') {
             userInput[len - 1] = '\0';
@@ -26,7 +26,8 @@ class SimpleShell {
             args.push_back(token);
             token = strtok(nullptr, " ");
         }
-        //for execvp the last element of the array must be nullptr
+
+        // For execvp the last element of the array must be nullptr
         args.push_back(nullptr);
         return args;
     }
@@ -38,10 +39,13 @@ class SimpleShell {
             perror("fork failed");
         } else if(pid == 0) {
             execvp(args[0], args.data());
+            // Added exit statement to fix problem with command not exiting 
+            exit(1);
         } else {
             int status;
-            //wait or the child process to complete
+            // Wait or the child process to complete
             waitpid(pid, &status, 0);  
+            // Debugging statement that is here for now
             std::cout << "Parent process: child completed" << std::endl;
         }
         return 1;
@@ -69,18 +73,10 @@ class SimpleShell {
         }
 };
 
+
 int main() {
     //initialise the shell class
     SimpleShell shell;
     shell.runShell();
     return 0;
 }
-
-
-
-
-
-
-
-
-
