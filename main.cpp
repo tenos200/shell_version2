@@ -4,6 +4,12 @@
 #include <iostream>
 #include <vector>
 #include <unistd.h>
+#include <filesystem>
+
+/* TODO:
+ * Set the start directory to be home directory.
+ * */
+
 
 using namespace std;
 
@@ -51,9 +57,17 @@ class SimpleShell {
         return 1;
     }
 
+    int restorePath() {
+        return 0;
+    }
+
     public: 
         int runShell() {
-            //here we should have the while loop that is running the shell
+            // Get and set the home environment 
+            const string homeEnvironment = getenv("HOME");
+            filesystem::current_path(homeEnvironment);
+
+            // Here we should have the while loop that is running the shell
             int exit = 1;
             char userInput[512];
             while(exit == 1) {
@@ -63,9 +77,9 @@ class SimpleShell {
                 } else if(strcmp(userInput, "exit\n") == 0) {
                     return 0;
                 } else {
-                    //we process the input
+                    // We process the input
                     vector<char*> args = processInput(userInput);
-                    //after that we pass and execute command
+                    // After that we pass and execute command
                     executeCommand(args);
                 }
             }
@@ -75,7 +89,7 @@ class SimpleShell {
 
 
 int main() {
-    //initialise the shell class
+    // Initialise the shell class
     SimpleShell shell;
     shell.runShell();
     return 0;
