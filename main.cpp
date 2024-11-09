@@ -5,11 +5,9 @@
 #include <vector>
 #include <unistd.h>
 #include <filesystem>
-
-/* TODO:
- * Set the start directory to be home directory.
- * */
-
+#include <string> 
+#include <iostream> 
+#include <string> 
 
 using namespace std;
 
@@ -57,12 +55,19 @@ class SimpleShell {
         return 1;
     }
 
-    int restorePath() {
+    
+    int restorePath(string startPath) {
+        filesystem::current_path(startPath);
+        return 0;
+    }
+
+    int changeDirectory() {
         return 0;
     }
 
     public: 
         int runShell() {
+            const string startPath = filesystem::current_path();
             // Get and set the home environment 
             const string homeEnvironment = getenv("HOME");
             filesystem::current_path(homeEnvironment);
@@ -73,8 +78,14 @@ class SimpleShell {
             while(exit == 1) {
                 printf("$ ");
                 if(fgets(userInput, BUFFERLEN, stdin) == NULL) {
+                    restorePath(startPath);
+                    string test = filesystem::current_path();
+                    cout << test << endl;
                     return -1;
                 } else if(strcmp(userInput, "exit\n") == 0) {
+                    restorePath(startPath);
+                    string test = filesystem::current_path();
+                    cout << test << endl;
                     return 0;
                 } else {
                     // We process the input
@@ -83,10 +94,13 @@ class SimpleShell {
                     executeCommand(args);
                 }
             }
+            filesystem::current_path(startPath);
+            string test = filesystem::current_path();
+            // Debugging log for cases we dont know
+            cout << test << " some chase unkown" << endl;
             return 0;
         }
 };
-
 
 int main() {
     // Initialise the shell class
