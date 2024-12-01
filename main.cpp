@@ -11,19 +11,15 @@
 using namespace std;
 
 /*
- * TODO: Ensure that proper string cleaning is carried out before necessary
- * TODO: Stage 4 - changing directory
- * TODO: Think about a different way to handle strings so we can compare
- * what the strings starts with i.e., "cd ." for example.
- * commands.
+ * TODO: Stage 4 - changing directory, still requires better error handling.
+ *
  * */
 
 
-//Constants for the program are now defined here, unsure if this is the correct place to have them.
+// Constants for the program are now defined here, unsure if this is the correct place to have them.
 const int BUFFERLEN = 512;
-// Get and set the home environment
-const string startPath = filesystem::current_path();
-const string homeEnvironment = getenv("HOME");
+const string STARTPATH = filesystem::current_path();
+const char *HOMEENVIRONMENT = getenv("HOME");
 
 // Enum to decide how to proceed with command execution
 enum commandCase {
@@ -63,12 +59,10 @@ class SimpleShell {
               perror("fork failed");
           } else if (pid == 0) {
               execvp(args[0], args.data());
-
-              // Added exit statement to fix problem with command not exiting
+              // Exit pid after command is executed.
               exit(1);
           } else {
               int status;
-
               // Wait or the child process to complete
               waitpid(pid, &status, 0);
 
@@ -94,16 +88,47 @@ class SimpleShell {
         return 1;
     }
 
-    int changeDirectory(string formattedUserInput) { 
-        cout << "CD" << endl;
+    /*
+     * TODO: Add proper error handling.
+     * TODO: Work on ... implementation. 
+     * TODO: Work on better error handling.
+     * */
+    int changeDirectory(string &formattedUserInput) { 
+        int stringLen = formattedUserInput.length() - 1;
+        int firstNonCmdCharacter = formattedUserInput.find(" ") + 1;
+        string currentPath = filesystem::current_path();
+
+        // Given that the command is only cd, then we navigate to home dir.
+        if(stringLen == 2 || stringLen == 3) {
+            filesystem::current_path(HOMEENVIRONMENT);
+        } else {
+
+            // Concatinate string to get full path and directory
+            string directoryCmdArgument = formattedUserInput.substr(
+                        firstNonCmdCharacter, 
+                        stringLen);
+
+            // Replace final \n with \0 to pass effectively to path.
+            std::replace(directoryCmdArgument.begin(), 
+                    directoryCmdArgument.end(), '\n', '\0');
+
+            filesystem::path fileSystemPath = currentPath 
+                + "/" 
+                + directoryCmdArgument;
+
+            // Check whether its a directory
+            if(filesystem::is_directory(fileSystemPath)) {
+                filesystem::current_path(fileSystemPath);
+            } else {
+                cout << "No such dirr" << endl;
+            } 
+
+        } 
         return 0; 
     }
 
-    /* This function removes any trailing or unnecessary whitespaces
-     * TODO: We should work on a better way to actually remove the first
-     * whitespace, rather than carrying out a algorithm and the remove the
-     * first withspace. We will come back to this later.
-     *
+    /* 
+     * This function removes any trailing or unnecessary whitespaces
      * */
     string removeExtraWhiteSpace(char userInput[BUFFERLEN]) {
         string userInputStr(userInput);
@@ -126,16 +151,17 @@ class SimpleShell {
             formattedString = formattedString.substr(1, end);
         }
 
-        // Lower-case all the letters
-        for(char &c: formattedString) {
+        // Lowercase all the letter
+        for(char c: formattedString) {
             c = tolower(c);
         }
+
         return formattedString;
     }
 
     public:
         int runShell() {
-            filesystem::current_path(homeEnvironment);
+            filesystem::current_path(HOMEENVIRONMENT);
             int exit = 0;
             char userInput[BUFFERLEN];
             commandCase procedure;
@@ -144,20 +170,23 @@ class SimpleShell {
             while (exit == 0) {
                 printf("$ ");
                 if (fgets(userInput, BUFFERLEN, stdin) == NULL) {
-                    restorePath(startPath);
+                    restorePath(STARTPATH);
+
+                    // Debugging statement.
                     string test = filesystem::current_path();
                     cout << test << endl;
                     return -1;
                 } else {
                     // First we format the string, removing unnecessary whitespace.
                     formattedUserInput = removeExtraWhiteSpace(userInput);
+
                     // Then we get what switch statement to use.
                     procedure = commandChoice(formattedUserInput);
                 }
 
                 switch (procedure) {
                     case exitCmd:
-                        exit = restorePath(startPath);
+                        exit = restorePath(STARTPATH);
                         break;
                     case changeDirectoryCmd:
                         changeDirectory(formattedUserInput);
@@ -168,7 +197,7 @@ class SimpleShell {
                         break;
                 }
             }
-            filesystem::current_path(startPath);
+            filesystem::current_path(STARTPATH);
             return 0;
         }
 };
