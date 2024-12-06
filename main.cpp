@@ -12,6 +12,8 @@ using namespace std;
 
 /*
  * TODO: Stage 4 - changing directory, still requires better error handling.
+ * TODO: Think about a elegant way to stirp away \n from the userInput. Its
+ * added in the fgets.
  *
  * */
 
@@ -29,7 +31,6 @@ enum commandCase {
 };
 
 class SimpleShell {
-
 
     vector<char*> processInput(char userInput[BUFFERLEN]) {
         // Here we should write a function that gets the input, checks it
@@ -89,20 +90,17 @@ class SimpleShell {
     }
 
     /*
-     * TODO: Add proper error handling.
-     * TODO: Work on ... implementation. 
-     * TODO: Work on better error handling.
+     * TODO: Add proper error handling. Look over tests with simple shell.
+     *
      * */
-    int changeDirectory(string &formattedUserInput) { 
+    void changeDirectory(string const &formattedUserInput) { 
         int stringLen = formattedUserInput.length() - 1;
         int firstNonCmdCharacter = formattedUserInput.find(" ") + 1;
         string currentPath = filesystem::current_path();
 
-        // Given that the command is only cd, then we navigate to home dir.
         if(stringLen == 2 || stringLen == 3) {
-            filesystem::current_path(HOMEENVIRONMENT);
+                filesystem::current_path(HOMEENVIRONMENT);
         } else {
-
             // Concatinate string to get full path and directory
             string directoryCmdArgument = formattedUserInput.substr(
                         firstNonCmdCharacter, 
@@ -112,19 +110,14 @@ class SimpleShell {
             std::replace(directoryCmdArgument.begin(), 
                     directoryCmdArgument.end(), '\n', '\0');
 
-            filesystem::path fileSystemPath = currentPath 
-                + "/" 
-                + directoryCmdArgument;
-
-            // Check whether its a directory
-            if(filesystem::is_directory(fileSystemPath)) {
-                filesystem::current_path(fileSystemPath);
+            filesystem::path path = directoryCmdArgument;
+            if(filesystem::is_directory(path)) {
+                filesystem::current_path(path);
             } else {
-                cout << "No such dirr" << endl;
+                cout << "cd: no such file or directory: " 
+                    << directoryCmdArgument << endl;
             } 
-
-        } 
-        return 0; 
+        }
     }
 
     /* 
@@ -152,7 +145,7 @@ class SimpleShell {
         }
 
         // Lowercase all the letter
-        for(char c: formattedString) {
+        for(char c : formattedString) {
             c = tolower(c);
         }
 
@@ -171,10 +164,6 @@ class SimpleShell {
                 printf("$ ");
                 if (fgets(userInput, BUFFERLEN, stdin) == NULL) {
                     restorePath(STARTPATH);
-
-                    // Debugging statement.
-                    string test = filesystem::current_path();
-                    cout << test << endl;
                     return -1;
                 } else {
                     // First we format the string, removing unnecessary whitespace.
@@ -198,7 +187,7 @@ class SimpleShell {
                 }
             }
             filesystem::current_path(STARTPATH);
-            return 0;
+            return -1;
         }
 };
 
