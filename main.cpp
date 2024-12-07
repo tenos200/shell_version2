@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include <system_error>
 #include <unistd.h>
 #include <vector>
 #include <string> 
@@ -94,6 +95,7 @@ class SimpleShell {
      *
      * */
     void changeDirectory(string const &formattedUserInput) { 
+        error_code err{};
         int stringLen = formattedUserInput.length() - 1;
         int firstNonCmdCharacter = formattedUserInput.find(" ") + 1;
         string currentPath = filesystem::current_path();
@@ -101,22 +103,21 @@ class SimpleShell {
         if(stringLen == 2 || stringLen == 3) {
                 filesystem::current_path(HOMEENVIRONMENT);
         } else {
-            // Concatinate string to get full path and directory
-            string directoryCmdArgument = formattedUserInput.substr(
-                        firstNonCmdCharacter, 
-                        stringLen);
+            try {
+                // Concatinate string to get full path and directory 
+                string directoryCmdArgument = formattedUserInput.substr(
+                            firstNonCmdCharacter, 
+                            stringLen);
 
-            // Replace final \n with \0 to pass effectively to path.
-            std::replace(directoryCmdArgument.begin(), 
-                    directoryCmdArgument.end(), '\n', '\0');
+                // Replace final \n with \0 to pass effectively to path.
+                std::replace(directoryCmdArgument.begin(), 
+                        directoryCmdArgument.end(), '\n', '\0');
 
-            filesystem::path path = directoryCmdArgument;
-            if(filesystem::is_directory(path)) {
+                filesystem::path path = directoryCmdArgument;
                 filesystem::current_path(path);
-            } else {
-                cout << "cd: no such file or directory: " 
-                    << directoryCmdArgument << endl;
-            } 
+            } catch(filesystem::filesystem_error &err) {
+                cout << err.code().message() << " :" << err.path1() << endl;
+            }
         }
     }
 
