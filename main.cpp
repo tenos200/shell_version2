@@ -56,20 +56,19 @@ class SimpleShell {
 
     int executeCommand(vector<char*> args) {
         pid_t pid = fork();
+        if (pid < 0) {
+            perror("fork failed");
+        } else if (pid == 0) {
+            execvp(args[0], args.data());
+            // Exit pid after command is executed.
+            exit(1);
+        } else {
+            int status;
+            // Wait or the child process to complete
+            waitpid(pid, &status, 0);
 
-          if (pid < 0) {
-              perror("fork failed");
-          } else if (pid == 0) {
-              execvp(args[0], args.data());
-              // Exit pid after command is executed.
-              exit(1);
-          } else {
-              int status;
-              // Wait or the child process to complete
-              waitpid(pid, &status, 0);
-
-              // Debugging statement that is here for now
-              cout << "Parent process: child completed" << endl;
+            // Debugging statement that is here for now
+            cout << "Parent process: child completed" << endl;
           }
           return 1;
     }
@@ -116,7 +115,8 @@ class SimpleShell {
                 filesystem::path path = directoryCmdArgument;
                 filesystem::current_path(path);
             } catch(filesystem::filesystem_error &err) {
-                cout << err.code().message() << " :" << err.path1() << endl;
+                cout << err.code().message() << ": " << err.path1().c_str() 
+                    << endl;
             }
         }
     }
@@ -162,7 +162,7 @@ class SimpleShell {
             string formattedUserInput;
 
             while (exit == 0) {
-                printf("$ ");
+                cout << "$ ";
                 if (fgets(userInput, BUFFERLEN, stdin) == NULL) {
                     restorePath(STARTPATH);
                     return -1;
