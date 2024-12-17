@@ -38,7 +38,7 @@ enum CommandCase {
 class SimpleShell {
   // History class that handles all history output
  private:
-  History history;
+  History history_handler;
 
   vector<char *> ProcessInput(char user_input[]) {
     // Here we should write a function that gets the input, checks it
@@ -157,12 +157,12 @@ class SimpleShell {
     return formatted_str;
   }
 
-  void ShowHistory() { hist.ShowHistory(); };
+  void ShowHistory() { history_handler.ShowHistory(); };
 
  public:
   int RunShell() {
     filesystem::current_path(kHomeEnvironment);
-    hist.CreateHistoryFile();
+    history_handler.CreateHistoryFile();
     int exit = 0;
     char user_input[kBufferlen];
     CommandCase procedure;
