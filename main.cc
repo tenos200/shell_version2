@@ -9,6 +9,9 @@
 #include <string>
 #include <system_error>
 #include <vector>
+
+#include "history.h"
+
 using namespace std;
 
 /*
@@ -33,7 +36,11 @@ enum CommandCase {
 };
 
 class SimpleShell {
-  vector<char *> ProcessInput(char user_input[kBufferlen]) {
+  // History class that handles all history output
+ private:
+  History history;
+
+  vector<char *> ProcessInput(char user_input[]) {
     // Here we should write a function that gets the input, checks it
     vector<char *> args;
 
@@ -87,15 +94,12 @@ class SimpleShell {
     }
   }
 
-  int RestorePath(string startPath) {
-    filesystem::current_path(startPath);
+  int RestorePath(string start_path) {
+    filesystem::current_path(start_path);
     return 1;
   }
 
-  /*
-   * TODO: Add proper error handling. Look over tests with simple shell.
-   *
-   * */
+  // TODO: Remove try catch here to better reflect Google coding guide
   void ChangeDirectory(string const &formatted_user_input) {
     int string_len = formatted_user_input.length() - 1;
     int first_non_cmd_char = formatted_user_input.find(" ") + 1;
@@ -153,11 +157,12 @@ class SimpleShell {
     return formatted_str;
   }
 
-  void showHistory() { cout << "history" << endl; }
+  void ShowHistory() { hist.ShowHistory(); };
 
  public:
   int RunShell() {
     filesystem::current_path(kHomeEnvironment);
+    hist.CreateHistoryFile();
     int exit = 0;
     char user_input[kBufferlen];
     CommandCase procedure;
@@ -184,7 +189,7 @@ class SimpleShell {
           ChangeDirectory(formatted_user_input);
           break;
         case kHistoryCmd:
-          showHistory();
+          ShowHistory();
           break;
         case kExecutableCmd:
           vector<char *> args = ProcessInput(user_input);
