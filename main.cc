@@ -32,7 +32,7 @@ enum CommandCase {
   kExitCmd,
   kChangeDirectoryCmd,
   kExecutableCmd,
-  kHistoryCmd,
+  kShowHistoryCmd,
 };
 
 class SimpleShell {
@@ -86,7 +86,7 @@ class SimpleShell {
       return kExitCmd;
     } else if (formatted_user_input.compare("history\n") == 0 ||
                formatted_user_input.compare("history \n") == 0) {
-      return kHistoryCmd;
+      return kShowHistoryCmd;
     } else if (formatted_user_input.starts_with("cd")) {
       return kChangeDirectoryCmd;
     } else {
@@ -108,19 +108,22 @@ class SimpleShell {
     if (string_len == 2 || string_len == 3) {
       filesystem::current_path(kHomeEnvironment);
     } else {
-      try {
-        // Concatinate string to get full path and directory
-        string directoryCmdArgument =
-            formatted_user_input.substr(first_non_cmd_char, string_len);
+      // Concatinate string to get full path and directory
+      string directoryCmdArgument =
+          formatted_user_input.substr(first_non_cmd_char, string_len);
 
-        // Replace final \n with \0 to pass effectively to path.
-        std::replace(directoryCmdArgument.begin(), directoryCmdArgument.end(),
-                     '\n', '\0');
+      // Replace final \n with \0 to pass effectively to path.
+      std::replace(directoryCmdArgument.begin(), directoryCmdArgument.end(),
+                   '\n', '\0');
 
+      if (filesystem::is_directory(directoryCmdArgument)) {
         filesystem::path path = directoryCmdArgument;
         filesystem::current_path(path);
-      } catch (filesystem::filesystem_error &err) {
-        cout << err.code().message() << ": " << err.path1().c_str() << endl;
+      } else if (filesystem::is_regular_file(directoryCmdArgument)) {
+        cout << "cd: not a directory: " << directoryCmdArgument << endl;
+      } else {
+        cout << "cd: no such file or directory: " << directoryCmdArgument
+             << endl;
       }
     }
   }
@@ -188,7 +191,7 @@ class SimpleShell {
         case kChangeDirectoryCmd:
           ChangeDirectory(formatted_user_input);
           break;
-        case kHistoryCmd:
+        case kShowHistoryCmd:
           ShowHistory();
           break;
         case kExecutableCmd:
