@@ -33,6 +33,7 @@ enum CommandCase {
   kChangeDirectoryCmd,
   kExecutableCmd,
   kShowHistoryCmd,
+  kExecutePreviousCmd,
 };
 
 class SimpleShell {
@@ -87,6 +88,9 @@ class SimpleShell {
     } else if (formatted_user_input.compare("history\n") == 0 ||
                formatted_user_input.compare("history \n") == 0) {
       return kShowHistoryCmd;
+    } else if (formatted_user_input.compare("!!\n") == 0 ||
+               formatted_user_input.compare("!! \n") == 0) {
+      return kExecutePreviousCmd;
     } else if (formatted_user_input.starts_with("cd")) {
       return kChangeDirectoryCmd;
     } else {
@@ -99,7 +103,6 @@ class SimpleShell {
     return 1;
   }
 
-  // TODO: Remove try catch here to better reflect Google coding guide
   void ChangeDirectory(string const &formatted_user_input) {
     int string_len = formatted_user_input.length() - 1;
     int first_non_cmd_char = formatted_user_input.find(" ") + 1;
@@ -190,6 +193,9 @@ class SimpleShell {
           break;
         case kChangeDirectoryCmd:
           ChangeDirectory(formatted_user_input);
+          break;
+        case kExecutePreviousCmd:
+          cout << "Executed previous command." << endl;
           break;
         case kShowHistoryCmd:
           ShowHistory();
