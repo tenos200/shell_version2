@@ -20,3 +20,26 @@ void History::CreateHistoryFile() {
   }
 }
 string History::GetHistoryCommand() { return "history"; }
+
+void History::StoreHistoryQueue(queue<string> historyVector) {
+  ofstream file(kHistoryFileName, std::ios::trunc);
+
+  while (!historyVector.empty()) {
+    file << historyVector.front();
+    historyVector.pop();
+  }
+  file.close();
+}
+
+queue<string> History::LoadHistoryQueue() {
+  queue<string> historyQueue;
+  string line;
+  ifstream file(kHistoryFileName);
+
+  while (getline(file, line)) {
+    historyQueue.push(line.append("\n"));
+  }
+  file.close();
+
+  return historyQueue;
+}

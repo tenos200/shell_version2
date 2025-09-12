@@ -18,6 +18,8 @@ using namespace std;
  * TODO: Stage 5 - history implementation
  * TODO: Think about a elegant way to stirp away \n from the userInput. Its
  * added in the fgets.
+ * TODO: DO a list of 10000 store all commands in here in a rotating que
+ * so we always push out the 10000th command if there are 10001 commands.
  *
  * */
 
@@ -26,6 +28,7 @@ using namespace std;
 const int kBufferlen = 512;
 const string kStartPath = filesystem::current_path();
 const char *kHomeEnvironment = getenv("HOME");
+const int kMaxHistoryLength = 1000;
 
 // Enum to decide how to proceed with command execution
 enum CommandCase {
@@ -168,7 +171,10 @@ class SimpleShell {
  public:
   int RunShell() {
     filesystem::current_path(kHomeEnvironment);
+
     history_handler.CreateHistoryFile();
+    // We should probably have some sort of variable that limits length.
+    queue<string> historyQueue = history_handler.LoadHistoryQueue();
     int exit = 0;
     char user_input[kBufferlen];
     CommandCase procedure;
@@ -178,10 +184,13 @@ class SimpleShell {
       cout << "$ ";
       if (fgets(user_input, kBufferlen, stdin) == NULL) {
         RestorePath(kStartPath);
-        return -1;
+        break;
       } else {
         // First we format the string, removing unnecessary whitespace.
         formatted_user_input = RemoveExtraWhiteSpace(user_input);
+
+        // Then we should add the command to history queue
+        historyQueue.push(formatted_user_input);
 
         // Then we get what switch statement to use.
         procedure = CommandChoice(formatted_user_input);
@@ -206,6 +215,7 @@ class SimpleShell {
           break;
       }
     }
+    history_handler.StoreHistoryQueue(historyQueue);
     filesystem::current_path(kStartPath);
     return -1;
   }
