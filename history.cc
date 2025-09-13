@@ -1,5 +1,6 @@
 #include "history.h"
 
+#include <deque>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -21,25 +22,25 @@ void History::CreateHistoryFile() {
 }
 string History::GetHistoryCommand() { return "history"; }
 
-void History::StoreHistoryQueue(queue<string> historyVector) {
+void History::StoreHistoryDeque(deque<string> history_buffer) {
   ofstream file(kHistoryFileName, std::ios::trunc);
 
-  while (!historyVector.empty()) {
-    file << historyVector.front();
-    historyVector.pop();
+  while (!history_buffer.empty()) {
+    file << history_buffer.front();
+    history_buffer.pop_front();
   }
   file.close();
 }
 
-queue<string> History::LoadHistoryQueue() {
-  queue<string> historyQueue;
+deque<string> History::LoadHistoryDeque() {
+  deque<string> history_deque;
   string line;
   ifstream file(kHistoryFileName);
 
   while (getline(file, line)) {
-    historyQueue.push(line.append("\n"));
+    history_deque.push_back(line.append("\n"));
   }
   file.close();
 
-  return historyQueue;
+  return history_deque;
 }

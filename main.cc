@@ -28,7 +28,7 @@ using namespace std;
 const int kBufferlen = 512;
 const string kStartPath = filesystem::current_path();
 const char *kHomeEnvironment = getenv("HOME");
-const int kMaxHistoryLength = 1000;
+const size_t kMaxHistoryLength = 1000;
 
 // Enum to decide how to proceed with command execution
 enum CommandCase {
@@ -168,17 +168,30 @@ class SimpleShell {
 
   void ShowHistory() { history_handler.ShowHistory(); };
 
+ private:
+  /** Function that adds to deque, given that its not greater than 10000
+   * if it is, then we remove pop the first element and add new to back of
+   * queue
+   */
+  void AddEntry(const string &user_input, deque<string> &history_buffer) {
+    if (history_buffer.size() == kMaxHistoryLength) {
+      history_buffer.pop_front();
+    }
+    history_buffer.push_back(user_input);
+  }
+
  public:
   int RunShell() {
     filesystem::current_path(kHomeEnvironment);
 
     history_handler.CreateHistoryFile();
-    // We should probably have some sort of variable that limits length.
-    queue<string> historyQueue = history_handler.LoadHistoryQueue();
     int exit = 0;
     char user_input[kBufferlen];
     CommandCase procedure;
     string formatted_user_input;
+    string previous_command;
+
+    deque<string> history_buffer = history_handler.LoadHistoryDeque();
 
     while (exit == 0) {
       cout << "$ ";
@@ -188,9 +201,6 @@ class SimpleShell {
       } else {
         // First we format the string, removing unnecessary whitespace.
         formatted_user_input = RemoveExtraWhiteSpace(user_input);
-
-        // Then we should add the command to history queue
-        historyQueue.push(formatted_user_input);
 
         // Then we get what switch statement to use.
         procedure = CommandChoice(formatted_user_input);
@@ -204,7 +214,9 @@ class SimpleShell {
           ChangeDirectory(formatted_user_input);
           break;
         case kExecutePreviousCmd:
-          cout << "Executed previous command." << endl;
+          previous_command = history_buffer.back();
+          cout << previous_command;
+          // We need need to feed back the command here somehow.
           break;
         case kShowHistoryCmd:
           ShowHistory();
@@ -214,8 +226,11 @@ class SimpleShell {
           ExecuteCommand(args);
           break;
       }
+
+      // Then we should add the command to history queue
+      AddEntry(formatted_user_input, history_buffer);
     }
-    history_handler.StoreHistoryQueue(historyQueue);
+    history_handler.StoreHistoryDeque(history_buffer);
     filesystem::current_path(kStartPath);
     return -1;
   }

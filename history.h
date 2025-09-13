@@ -1,7 +1,6 @@
 #include <string.h>
 
 #include <iostream>
-#include <vector>
 
 class History {
  public:
@@ -13,14 +12,14 @@ class History {
   /** Stores history queue in .shell_history file, overwrites each time a
    * new file is stored.
    */
-  void StoreHistoryQueue(std::queue<std::string> commandToStore);
+  void StoreHistoryDeque(std::deque<std::string> history_buffer);
 
   /**
-   * Loads the history from `.shell_history` file into a queue:
+   * Loads the history from `.shell_history` file into a deque:
    * @code
-   * std::queue<std::string> historyQueue;
+   * std::deque<std::string> historyBuffer;
    * @endcode
-   * This queue is then used as to fetch history commands from.
+   * This deque is then used as to fetch history commands from.
    */
-  std::queue<std::string> LoadHistoryQueue();
+  std::deque<std::string> LoadHistoryDeque();
 };
