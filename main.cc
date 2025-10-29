@@ -7,7 +7,6 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
-#include <system_error>
 #include <vector>
 
 #include "history.h"
@@ -15,19 +14,17 @@
 using namespace std;
 
 /*
- * TODO: Stage 5 - history implementation
+ * TODO: Stage 5 - history implementation, should include, !! command,
+ * !N command.
  * TODO: Think about a elegant way to stirp away \n from the userInput. Its
  * added in the fgets.
- * TODO: DO a list of 10000 store all commands in here in a rotating que
- * so we always push out the 10000th command if there are 10001 commands.
- *
  * */
 
 // Constants for the program are now defined here, unsure if this is the correct
 // place to have them.
 const int kBufferlen = 512;
 const string kStartPath = filesystem::current_path();
-const char *kHomeEnvironment = getenv("HOME");
+const char* kHomeEnvironment = getenv("HOME");
 const size_t kMaxHistoryLength = 1000;
 
 // Enum to decide how to proceed with command execution
@@ -44,9 +41,9 @@ class SimpleShell {
  private:
   History history_handler;
 
-  vector<char *> ProcessInput(char user_input[]) {
+  vector<char*> ProcessInput(char user_input[]) {
     // Here we should write a function that gets the input, checks it
-    vector<char *> args;
+    vector<char*> args;
 
     // Replace \n with \0 from the fgets, this allows us to use execvp later
     size_t len = strlen(user_input);
@@ -54,7 +51,7 @@ class SimpleShell {
       user_input[len - 1] = '\0';
     }
 
-    char *token = strtok(user_input, " \t|><;&");
+    char* token = strtok(user_input, " \t|><;&");
     while (token != nullptr) {
       args.push_back(token);
       token = strtok(nullptr, " ");
@@ -65,7 +62,8 @@ class SimpleShell {
     return args;
   }
 
-  int ExecuteCommand(vector<char *> args) {
+ private:
+  int ExecuteCommand(vector<char*> args) {
     pid_t pid = fork();
     if (pid < 0) {
       perror("fork failed");
@@ -84,7 +82,8 @@ class SimpleShell {
     return 1;
   }
 
-  CommandCase CommandChoice(string &formatted_user_input) {
+ private:
+  CommandCase CommandChoice(string& formatted_user_input) {
     if (formatted_user_input.compare("exit\n") == 0 ||
         formatted_user_input.compare("exit \n") == 0) {
       return kExitCmd;
@@ -101,12 +100,14 @@ class SimpleShell {
     }
   }
 
+ private:
   int RestorePath(string start_path) {
     filesystem::current_path(start_path);
     return 1;
   }
 
-  void ChangeDirectory(string const &formatted_user_input) {
+ private:
+  void ChangeDirectory(string const& formatted_user_input) {
     int string_len = formatted_user_input.length() - 1;
     int first_non_cmd_char = formatted_user_input.find(" ") + 1;
     string current_path = filesystem::current_path();
@@ -126,10 +127,10 @@ class SimpleShell {
         filesystem::path path = directoryCmdArgument;
         filesystem::current_path(path);
       } else if (filesystem::is_regular_file(directoryCmdArgument)) {
-        cout << "cd: not a directory: " << directoryCmdArgument << endl;
+        cout << "cd: not a directory: " << directoryCmdArgument << '\n';
       } else {
         cout << "cd: no such file or directory: " << directoryCmdArgument
-             << endl;
+             << '\n';
       }
     }
   }
@@ -137,6 +138,7 @@ class SimpleShell {
   /*
    * This function removes any trailing or unnecessary whitespaces
    * */
+ private:
   string RemoveExtraWhiteSpace(char user_input[kBufferlen]) {
     string user_input_str(user_input);
     string formatted_str = "";
@@ -168,12 +170,12 @@ class SimpleShell {
 
   void ShowHistory() { history_handler.ShowHistory(); };
 
- private:
-  /** Function that adds to deque, given that its not greater than 10000
+  /** Function that adds to deque, given that its not greater than 1000
    * if it is, then we remove pop the first element and add new to back of
    * queue
    */
-  void AddEntry(const string &user_input, deque<string> &history_buffer) {
+ private:
+  void AddEntry(const string& user_input, deque<string>& history_buffer) {
     if (history_buffer.size() == kMaxHistoryLength) {
       history_buffer.pop_front();
     }
@@ -216,13 +218,14 @@ class SimpleShell {
         case kExecutePreviousCmd:
           previous_command = history_buffer.back();
           cout << previous_command;
-          // We need need to feed back the command here somehow.
+          procedure = CommandChoice(previous_command);
+          // TODO: We need some way to feed back this command yo.
           break;
         case kShowHistoryCmd:
           ShowHistory();
           break;
         case kExecutableCmd:
-          vector<char *> args = ProcessInput(user_input);
+          vector<char*> args = ProcessInput(user_input);
           ExecuteCommand(args);
           break;
       }

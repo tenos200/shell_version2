@@ -17,7 +17,7 @@ void History::CreateHistoryFile() {
     cout << kHistoryFileName << endl;
     ofstream Myfile(kHistoryFileName);
   } else {
-    cout << "the file is here!" << endl;
+    cout << "the file is here!" << '\n';
   }
 }
 string History::GetHistoryCommand() { return "history"; }
