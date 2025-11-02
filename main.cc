@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <deque>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -182,57 +183,76 @@ class SimpleShell {
     history_buffer.push_back(user_input);
   }
 
+  /*
+   *
+   * */
+ private:
+  int ExecuteUserCommand(string& user_input, deque<string>& history_buffer) {
+    CommandCase procedure = CommandChoice(user_input);
+
+    switch (procedure) {
+      case kExitCmd:
+        return 0;
+
+      case kChangeDirectoryCmd:
+        ChangeDirectory(user_input);
+        break;
+
+      case kShowHistoryCmd:
+        ShowHistory();
+        break;
+
+      case kExecutePreviousCmd: {
+        if (history_buffer.empty()) {
+          cout << "No commands in history.\n";
+          break;
+        }
+        string prev = history_buffer.back();
+        cout << prev << endl;
+        // Recurse — run the previous command again
+        ExecuteUserCommand(prev, history_buffer);
+        break;
+      }
+
+      case kExecutableCmd: {
+        char temp[kBufferlen];
+        strncpy(temp, user_input.c_str(), sizeof(temp));
+        temp[sizeof(temp) - 1] = '\0';
+        vector<char*> args = ProcessInput(temp);
+        ExecuteCommand(args);
+        break;
+      }
+    }
+
+    // Add to history (skip !! itself if you prefer)
+    if (user_input != "!!" && user_input != "!!\n")
+      AddEntry(user_input, history_buffer);
+
+    return 1;
+  }
+
  public:
   int RunShell() {
     filesystem::current_path(kHomeEnvironment);
 
     history_handler.CreateHistoryFile();
-    int exit = 0;
-    char user_input[kBufferlen];
-    CommandCase procedure;
-    string formatted_user_input;
-    string previous_command;
-
     deque<string> history_buffer = history_handler.LoadHistoryDeque();
 
-    while (exit == 0) {
+    char user_input[kBufferlen];
+    string formatted_user_input;
+    int running = 1;
+
+    while (running) {
       cout << "$ ";
-      if (fgets(user_input, kBufferlen, stdin) == NULL) {
+      if (fgets(user_input, kBufferlen, stdin) == nullptr) {
         RestorePath(kStartPath);
         break;
-      } else {
-        // First we format the string, removing unnecessary whitespace.
-        formatted_user_input = RemoveExtraWhiteSpace(user_input);
-
-        // Then we get what switch statement to use.
-        procedure = CommandChoice(formatted_user_input);
       }
 
-      switch (procedure) {
-        case kExitCmd:
-          exit = RestorePath(kStartPath);
-          break;
-        case kChangeDirectoryCmd:
-          ChangeDirectory(formatted_user_input);
-          break;
-        case kExecutePreviousCmd:
-          previous_command = history_buffer.back();
-          cout << previous_command;
-          procedure = CommandChoice(previous_command);
-          // TODO: We need some way to feed back this command yo.
-          break;
-        case kShowHistoryCmd:
-          ShowHistory();
-          break;
-        case kExecutableCmd:
-          vector<char*> args = ProcessInput(user_input);
-          ExecuteCommand(args);
-          break;
-      }
-
-      // Then we should add the command to history queue
-      AddEntry(formatted_user_input, history_buffer);
+      formatted_user_input = RemoveExtraWhiteSpace(user_input);
+      running = ExecuteUserCommand(formatted_user_input, history_buffer);
     }
+
     history_handler.StoreHistoryDeque(history_buffer);
     filesystem::current_path(kStartPath);
     return -1;
